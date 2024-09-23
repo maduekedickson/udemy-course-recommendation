@@ -55,7 +55,7 @@ df = clean_course_titles(df)
 st.title("Udemy Course Recommendation System Using Machine Learning")
 
 # Display the logo or image
-st.image("images.jpg", use_column_width=True)
+st.image("image.jpg", use_column_width=True)
 
 # User input for course title
 course_title_input = st.text_input("Enter a course keyword or title", "")
