@@ -52,7 +52,7 @@ df = pd.read_csv('UdemyCleanedTitle.csv')
 df = clean_course_titles(df)
 
 # Streamlit App Layout
-st.title("Udemy Course Recommendation 😄")
+st.title("Udemy Course Recommendation")
 
 # Display the logo or image
 st.image("image.jpg", use_column_width=True)
