@@ -12,37 +12,50 @@ def clean_course_titles(df):
     df['Clean_title'] = df['Clean_title'].str.lower()
     return df
 
-# Function to calculate cosine similarity matrix
-def get_cosine_similarity_matrix(df):
+# Function to vectorize titles and calculate cosine similarity matrix
+def get_cosine_similarity_matrix(df, query=None):
     count_vect = CountVectorizer()
+    
+    # Fit the vectorizer on the course titles
     cv_mat = count_vect.fit_transform(df['Clean_title'])
-    return cosine_similarity(cv_mat)
+    
+    if query is not None:
+        # Vectorize the user query the same way
+        query_vec = count_vect.transform([query])
+        # Calculate cosine similarity between the query and all courses
+        cosine_sim = cosine_similarity(query_vec, cv_mat)
+        return cosine_sim
+    else:
+        return cosine_similarity(cv_mat)
 
 # Function to recommend courses based on title
-def recommend_courses(df, title, cosine_mat, num_rec=6):
-    course_index = pd.Series(df.index, index=df['course_title']).drop_duplicates()
-    index = course_index.get(title, None)
+def recommend_courses(df, title, num_rec=6):
+    # Clean the input title the same way as the course titles
+    clean_title = nfx.remove_stopwords(title)
+    clean_title = nfx.remove_special_characters(clean_title)
+    clean_title = clean_title.lower()
 
-    if index is None:
-        return None
-    
-    scores = list(enumerate(cosine_mat[index]))
+    # Get the similarity scores for the input title
+    cosine_sim = get_cosine_similarity_matrix(df, query=clean_title)
+
+    # Sort the similarity scores
+    scores = list(enumerate(cosine_sim[0]))
     sorted_scores = sorted(scores, key=lambda x: x[1], reverse=True)
-    
-    selected_course_indices = [i[0] for i in sorted_scores[1:num_rec+1]]
+
+    # Select the top recommendations (excluding the first result if it's an exact match)
+    selected_course_indices = [i[0] for i in sorted_scores[:num_rec]]
     recommended_df = df.iloc[selected_course_indices]
     return recommended_df
 
 # Load and clean data
 df = pd.read_csv('UdemyCleanedTitle.csv')
 df = clean_course_titles(df)
-cosine_sim_mat = get_cosine_similarity_matrix(df)
 
 # Streamlit App Layout
-st.title("Course Recommendation System")
+st.title("Udemy Course Recommendation System Using Machine Learning")
 
 # Display the logo or image
-st.image("https://via.placeholder.com/800x300.png?text=Course+Recommendations", use_column_width=True)
+st.image("images.jpg", use_column_width=True)
 
 # User input for course title
 course_title_input = st.text_input("Enter a course keyword or title", "")
@@ -51,7 +64,7 @@ course_title_input = st.text_input("Enter a course keyword or title", "")
 if st.button("Recommend"):
     if course_title_input:
         # Get recommendations
-        recommended_df = recommend_courses(df, course_title_input, cosine_sim_mat)
+        recommended_df = recommend_courses(df, course_title_input)
         
         if recommended_df is not None and not recommended_df.empty:
             st.subheader("Recommended Courses")
@@ -69,4 +82,3 @@ if st.button("Recommend"):
             st.warning("No courses found for the given keyword.")
     else:
         st.error("Please enter a course keyword or title.")
-
